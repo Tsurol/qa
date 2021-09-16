@@ -1,0 +1,45 @@
+{% for question in page_data.items %}
+<div class="qa-item">
+    <a href="{{ url_for('qa.detail', q_id=question.id) }}"
+       class="title">{{ question.title }}</a>
+    <div class="desc">
+        {% if question.img %}
+            <div class="left">
+                <img src="{{ question.get_img_url }}" alt="" srcset="">
+            </div>
+        {% endif %}
+        <div class="right">
+            {# 展示该问题的简述 #}
+            <div class="show-desc">
+                {{ question.desc|d('暂无简述', True) }}...
+                <span class="more">阅读原文<i class="glyphicon glyphicon-menu-down"></i></span>
+            </div>
+            {# 展示该问题的详情 #}
+            <div class="show-all hidden">
+                {% autoescape false %}
+                {{ (question.content|safe)|d('',True) }}
+                {% endautoescape %}
+                <span class="more">收起<i class="glyphicon glyphicon-menu-up"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="qa-footer">
+        <div>
+            <button type="button" class="btn btn-info btn-sm">已关注</button>
+        </div>
+        <div class="txt-menu"><i
+                class="glyphicon glyphicon-comment"></i> {{ question.comment_count|d('0', True) }}条评论
+        </div>
+        <div class="txt-menu"><i class="glyphicon glyphicon-send"></i>分享</div>
+        <div class="txt-menu"><i class="glyphicon glyphicon-flag"></i>举报</div>
+        <div class="txt-menu btn-group">
+            <i class="glyphicon glyphicon-option-horizontal dropdown-toggle"
+               data-toggle="dropdown"
+               aria-haspopup="true" aria-expanded="false"></i>
+            <ul class="dropdown-menu">
+                <li><a href="#">不感兴趣</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endfor %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% from 'macro/form_errors.html' import form_field_errors %}
+{% block title %}{{ super() }}写文章{% endblock %}
+{% block link_css %}
+    <link rel="stylesheet" href="/assets/style/write.css">
+{% endblock %}
+
+{% block layout %}
+    <!-- 顶部导航 -->
+    {% include 'components/nav.html' %}
+    <!-- // 顶部导航 -->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <!-- flash消息 -->
+                {% include 'components/flash_message.html' %}
+                <!-- //flash消息 -->
+                <form class="form-horizontal write-form"
+                      method="post" enctype="multipart/form-data" action="{{ url_for('qa.write') }}">
+                    {{ form.csrf_token }}
+                    {# 表单信息要上传到服务器端。multipart/form-data:将form中的数据变成二进制数据进行上传,
+                    所以这时候这时如果用request是无法直接获取到相应表单的值的 #}
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-info pull-right">发布</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="upload-file">
+                            {{ form.img }}
+                            <i class="glyphicon glyphicon-camera"></i>
+                        </label>
+                    </div>
+                    {{ form_field_errors(form.img.errors) }}
+
+                    <div class="form-group">
+                        {{ form.title }}
+                    </div>
+                    {{ form_field_errors(form.title.errors) }}
+
+                    <div class="form-group">
+                        {{ form.tags }}
+                    </div>
+                    {{ form_field_errors(form.tags.errors) }}
+
+                    <div class="form-group">
+                        {{ form.desc }}
+                    </div>
+                    {{ form_field_errors(form.desc.errors) }}
+
+                    <div class="form-group">
+                        {{ form.content }}
+                        {# 加载ckeditor配置并绑定字段 #}
+                        {{ ckeditor.load() }}
+                        {{ ckeditor.config(name='content') }}
+                    </div>
+                    {{ form_field_errors(form.content.errors) }}
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block link_js %}
+    <script type="text/javascript" src="/assets/js/write.js"></script>
+{% endblock %}

@@ -1,0 +1,620 @@
+{% extends 'base.html' %}
+{% from 'macro/form_errors.html' import form_field_errors %}
+{% from 'macro/answer_comment_item.html' import comment_item_show %}
+{% block title %}{{ super() }}文章详情{% endblock %}
+{% block link_css %}
+    <link rel="stylesheet" href="/assets/style/detail.css">
+{% endblock %}
+
+{% block layout %}
+<!--导航条-->
+{% include 'components/nav.html' %}
+<!--//导航条-->
+
+<!-- 问题简述 -->
+<div class="layout-question">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- flash消息 -->
+                {% include 'components/flash_message.html' %}
+                <!-- //flash消息 -->
+                <!-- 问题标签 -->
+                <ul class="que-tag-ls">
+                    {% for question_tag in question_tags %}
+                        <li><a href="#">{{ question_tag.tag_name }}</a></li>
+                    {% endfor %}
+                </ul>
+                <!-- // 问题标签 -->
+                <h3>{{ question.title }}</h3>
+                <div class="show-desc">
+                    {# 问题简述 #}
+                    {{ question.desc|d('暂无简述', True) }}…
+                    <span class="btn-show-more">显示全部<i class="glyphicon glyphicon-menu-down"></i></span>
+                </div>
+                <div class="show-all hidden">
+                    {# 问题详情 #}
+                    {% autoescape false %}
+                    {{ question.content|safe }}
+                    {% endautoescape %}
+                    <span class="btn-show-less">收起<i class="glyphicon glyphicon-menu-up"></i></span>
+                </div>
+                <!-- 菜单栏 -->
+                <div class="qa-footer">
+                    {% if not current_user.is_authenticated %}
+                        <div>
+                            <button type="button" class="btn btn-info btn-sm"
+                                    id="btn-follow"
+                                    data-url="{{ url_for("qa.question_follow", q_id=question.id) }}">
+                                关注问题
+                            </button>
+                        </div>
+                    {% elif current_user.is_authenticated %}
+                        {% with %}
+                            <div>
+                                {% if current_user.follow_question_list.filter_by(is_valid=1,q_id=question.id).first() %}
+                                    <button type="button" class="btn btn-info btn-sm"
+                                            id="btn-unfollow"
+                                            data-url="{{ url_for("qa.question_unfollow", q_id=question.id) }}">取消关注
+                                    </button>
+                                {% elif not current_user.follow_question_list.filter_by(is_valid=1,q_id=question.id).first() %}
+                                    <button type="button" class="btn btn-info btn-sm"
+                                            id="btn-follow"
+                                            data-url="{{ url_for("qa.question_follow", q_id=question.id) }}">关注问题
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endwith %}
+                    {% endif %}
+                    <div>
+                        <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#addComment">写回答
+                        </button>
+                    </div>
+                    <div class="txt-menu"><i class="glyphicon glyphicon-comment"></i>
+                        {# 问题下的坪论数 #}
+                        {{ question.comment_count }}条评论
+                    </div>
+                    <div class="txt-menu"><i class="glyphicon glyphicon-send"></i>分享</div>
+                    <div class="txt-menu"><i class="glyphicon glyphicon-flag"></i>举报</div>
+                    <div class="txt-menu btn-group">
+                        <i class="glyphicon glyphicon-option-horizontal dropdown-toggle" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false"></i>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">不感兴趣</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- //菜单栏 -->
+            </div>
+            <div class="col-md-3">
+                <div class="que-stats-box">
+                    <!-- 关注者 -->
+                    <div>
+                        <span>关注者</span>
+                        <strong>{{ question.follow_count|num_split }}</strong>
+                    </div>
+                    <!-- //关注者 -->
+                    <!-- 被浏览 -->
+                    <div>
+                        <span>被浏览</span>
+                        <strong>{{ question.view_count|num_split }}</strong>
+                    </div>
+                    <!-- //被浏览 -->
+                </div>
+            </div>
+        </div><!-- // row -->
+    </div>
+</div>
+<!-- // 问题简述 -->
+
+<!-- 回答 -->
+<div class="layout-answer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-9 left-content">
+                {% block link_more %}
+                    <a class="link-more" href="#">查看全部 {{ question.answer_count|num_split }} 个回答</a>
+                {% endblock %}
+                <!-- 回答内容区域 -->
+                {% if answer == None %}
+                <div class="answer-content box-wrap">
+                    暂无人回答该问题
+                </div>
+                {% else %}
+
+                <div class="answer-content box-wrap">
+                    <div class="user-info">
+                        <div class="avater">
+                            {% if answer.user.avatar %}
+                                <img src="{{ answer.user.get_avatar_url }}" alt="">
+                            {% else %}
+                                {# 如果没有头像，则展示默认头像 #}
+                                <img src="/assets/home/qa/user_head.jpg" alt="用户头像">
+                            {% endif %}
+                        </div>
+                        <div class="desc">
+                            <h4>{{ answer.user.nickname }}</h4>
+                            <p>{{ answer.user.profile.maxim|d('他很懒,什么都没有留下', True) }}</p>
+                        </div>
+                    </div>
+                    <div class="answer-stats">{{ answer.love_count|d('0', True) }} 人赞同了该回答</div>
+                    <div class="answer-txt">
+                        {% autoescape false %}
+                        {{ answer.content|safe }}
+                        {% endautoescape %}
+                    </div>
+                    <div class="answer-time">发布于 {{ answer.answered_at }}</div>
+                    <!-- 底部菜单 -->
+                    <div class="qa-footer">
+                        <div>
+                            <button type="button" class="btn btn-info btn-sm" id="btn-up"
+                                    data-url="{{ url_for("qa.answer_love", q_id=question.id, a_id=answer.id) }}">
+                                <i class="glyphicon glyphicon-thumbs-up"></i>
+                                赞同 <span> {{ answer.love_count|d('0',True) }}</span>
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm" id="btn-down"
+                                    data-url="{{ url_for("qa.answer_dislove", q_id=question.id, a_id=answer.id) }}">
+                                <i class="glyphicon glyphicon-thumbs-down"></i>
+                                <span>{{ answer.dislove_count|d('0',True) }}</span>
+                            </button>
+                        </div>
+                        <div class="txt-menu"><i class="glyphicon glyphicon-comment"></i>
+                            {# 回答下的坪论数 #}
+                            {{ answer.comment_count }}条评论
+                        </div>
+                        <div class="txt-menu"><i class="glyphicon glyphicon-send"></i>分享</div>
+                        {% if not current_user.is_authenticated %}
+                            <div class="txt-menu answer-collect"
+                                 data-url="{{ url_for("qa.answer_collect", q_id=question.id, a_id=answer.id) }}">
+                                <i class="glyphicon glyphicon-heart"></i>收藏
+                            </div>
+                        {% elif current_user.is_authenticated %}
+                            {% if current_user.answer_collect_list.filter_by(is_valid=1,question_id=question.id,answer_id=answer.id).first() %}
+                                <div class="txt-menu answer-collect">
+                                    <i class="glyphicon glyphicon-heart"></i>已收藏
+                                </div>
+                            {% else %}
+                                <div class="txt-menu answer-collect"
+                                     data-url="{{ url_for("qa.answer_collect", q_id=question.id, a_id=answer.id) }}">
+                                    <i class="glyphicon glyphicon-heart"></i>收藏
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        <div class="txt-menu"><i class="glyphicon glyphicon-flag"></i>举报</div>
+                        <div class="txt-menu btn-group">
+                            <i class="glyphicon glyphicon-option-horizontal dropdown-toggle" data-toggle="dropdown"
+                               aria-haspopup="true" aria-expanded="false"></i>
+                            <ul class="dropdown-menu">
+                                <li><a href="#">不感兴趣</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- // 底部菜单 -->
+                    <!-- 评论框 -->
+                    <div class="comment-box box-wrap">
+                        <!-- 统计和菜单 -->
+                        <div class="comment-stats">
+                            <div class="title">{{ answer.comment_count|d('0', True) }}条评论</div>
+                            <div class="menu"><i class="glyphicon glyphicon-random"></i>切换为时间顺序</div>
+                        </div>
+                        <!-- // 统计和菜单 -->
+                        <!-- 评论列表 -->
+                        <div class="comment-ls" id="id-comment-ls">
+                            <p>内容正在加载中...</p>
+                        </div>
+                        <!-- // 评论列表 -->
+                        <!--分页-->
+                        <nav aria-label="...">
+                            <ul class="pager">
+                                <li class="previous"><a href="javascript:"><span
+                                        aria-hidden="true">&larr;</span>
+                                    上一页</a></li>
+                                <li class="next"><a href="javascript:">下一页 <span
+                                        aria-hidden="true">&rarr;</span></a>
+                                </li>
+                            </ul>
+                        </nav>
+                        <!--//分页-->
+                        <!-- 发表评论 -->
+                        <form class="form-horizontal comment-publish comment-last" id="comment-last">
+                            <input type="text" name="content" class="form-control" placeholder="写下你的评论...">
+                            <button type="button" class="btn btn-default btn-grey" id="btn-last">发布</button>
+                        </form>
+                        <!-- // 发表评论 -->
+                    </div>
+                    <!-- // 评论框 -->
+                </div>
+                {% endif %}
+                <!-- // 回答内容区域 -->
+                {{ self.link_more() }}
+            </div>
+            <div class="col-md-3 right-content">
+                <!-- 关于作者 -->
+                {% if answer %}
+                    <div class="about-user box-wrap">
+                        <div class="user-info">
+                            {% if answer.user.avatar %}
+                                <div class="avater">
+                                    <img src="{{ answer.user.get_avatar_url }}">
+                                </div>
+                            {% else %}
+                                {# 如果该回答的作者的头像地址不存在,则显示默认头像 #}
+                                <div class="avater">
+                                    <img src="/assets/home/qa/user_head.jpg" alt="用户默认头像">
+                                </div>
+                            {% endif %}
+                            <div class="desc">
+                                <h4>{{ answer.user.nickname }}</h4>
+                                <p>{{ answer.user.profile.maxim|d('他很懒,什么都没有留下', True) }}</p>
+                            </div>
+                        </div>
+                        <!-- 用户统计 -->
+                        <div class="qa-stats">
+                            <div>
+                                <span>回答</span>
+                                {# 该用户有多少条回答 #}
+                                <strong>{{ answer.user.answer_count|num_split }}</strong>
+                            </div>
+                            <div>
+                                <span>提问</span>
+                                <strong>{{ answer.user.question_list.count()|d('0', True) }}</strong>
+                            </div>
+                            <div>
+                                <span>关注者</span>
+                                <strong>{{ answer.user.profile.fans|d('0', True) }}</strong>
+                            </div>
+                        </div>
+                        <!-- // 用户统计 -->
+                        <div class="menu-ls">
+                            <div>
+                                <a href="#" class="btn btn-info btn-sm"><i class="glyphicon glyphicon-plus"></i>关注他</a>
+                            </div>
+                            <div>
+                                <a href="#" class="btn btn-default btn-sm btn-grey"><i
+                                        class="glyphicon glyphicon-comment"></i>发私信</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="about-user box-wrap">暂无作者</div>
+                {% endif %}
+                <!-- //关于作者 -->
+                <!-- 相关问题 -->
+                <div class="rel-ques box-wrap">
+                    <div class="title">其他问题</div>
+                    <div class="rel-que-ls">
+                        {% for anther in questions %}
+                            <div {% if anther == question %} hidden {% endif %}>
+                                <a href="{{ url_for('qa.detail',q_id=anther.id) }}">{{ anther.title }} </a>
+                                <span>{{ anther.answer_count }}个回答</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- //相关问题 -->
+                <!-- 右侧页脚 -->
+                <div class="right-footer">
+                    <a href="#">用户指南</a><span class="dot">·</span>
+                    <a href="#">用户使用协议</a><span class="dot">·</span>
+                    <a href="#">用户隐私权政策</a>
+                    <br/>
+                    <a href="#">侵权举报</a><span class="dot">·</span>
+                    <a href="#">网上有害信息举报专区</a>
+                    <br/>
+                    <a href="#">京ICP证 第10001000号</a>
+                    <br/>
+                    <a href="#">京ICP备 第10001000号</a>
+                    <br/>
+                    <a href="#">联系我们 &copy; 2020在线问答</a>
+                </div>
+                <!-- //右侧页脚 -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- //回答 -->
+
+<!-- 底部右下角菜单 -->
+{% include 'components/footer.html' %}
+<!-- //底部右下角菜单 -->
+
+<!-- 写回答，对话框 -->
+<div class="modal fade" id="addComment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <form class="form-horizontal modal-dialog" role="document"
+          method="post" action="{{ url_for('qa.detail', q_id=question.id) }}">
+        {{ form.csrf_token }}
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">写回答</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    {{ form.content }}
+                    {{ ckeditor.load() }}
+                    {{ ckeditor.config(name='content') }}
+                </div>
+                {{ form_field_errors(form.content.errors) }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="submit" class="btn btn-primary">提交</button>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- // 写回答，对话框 -->
+{% endblock %}
+{% block link_js %}
+    <script type="text/javascript" src="/assets/js/common.js"></script>
+    <script type="text/javascript" src="/assets/js/detail.js"></script>
+    <script>
+        // 关注问题
+        function bindFollowQuestion() {
+            $('#btn-follow').click(function () {
+                var url = $(this).data("url");
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    complete: function (res) {
+                        // console.log('res:', res);
+                        if (res.status === 201) {
+                            window.alert('关注成功');
+                            location.reload();
+                        } else if (res.status === 401) {
+                            window.alert('请先登录');
+                            // 跳到登录
+                            // window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('服务器正忙');
+                        }
+                    }
+                })
+            })
+        }
+
+        // 取消关注问题
+        function bindUnFollowQuestion() {
+
+            $('#btn-unfollow').click(function () {
+                var url = $(this).data("url");
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    complete: function (res) {
+                        // console.log('res:', res);
+                        if (res.status === 201) {
+                            window.alert('取消关注成功');
+                            location.reload();
+                        } else if (res.status === 401) {
+                            window.alert('请先登录');
+                            // 跳到登录
+                            // window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('服务器正忙');
+                        }
+                    }
+                })
+            })
+        }
+
+        // 回答的点赞
+        function bindUpAnswer() {
+            $('#btn-up').click(function () {
+                var url = $(this).data("url");
+                var btn = $('#btn-up');
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    complete: function (res) {
+                        // console.log('res:', res);
+                        if (res.status === 201) {
+                            window.alert(res.responseJSON.message);
+                            // 当前的点赞数
+                            var count = $('span', btn).text();
+                            // 点赞数+1
+                            count = parseInt(count) + 1;
+                            // 重新设置，实现点赞数变更
+                            $('span', btn).text(count);
+                            location.reload();
+                        } else if (res.status === 401) {
+                            window.alert(res.responseJSON.message);
+                            // 跳到登录
+                            // window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('服务器正忙');
+                        }
+                    }
+                })
+            })
+        }
+
+        // 回答的踩踩
+        function bindDownAnswer() {
+            $('#btn-down').click(function () {
+                var url = $(this).data("url");
+                var btn = $('#btn-down');
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    complete: function (res) {
+                        // console.log('res:', res);
+                        if (res.status === 201) {
+                            window.alert(res.responseJSON.message);
+                            // 当前的点赞数
+                            var count = $('span', btn).text();
+                            // 点赞数+1
+                            count = parseInt(count) + 1;
+                            // 重新设置，实现点赞数变更
+                            $('span', btn).text(count);
+                            location.reload();
+                        } else if (res.status === 401) {
+                            window.alert(res.responseJSON.message);
+                            // 跳到登录
+                            // window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('服务器正忙');
+                        }
+                    }
+                })
+            })
+        }
+
+        // 收藏回答
+        function bindAnswerCollect() {
+            $('.answer-collect').click(function () {
+                var url = $(this).data("url");
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    complete: function (res) {
+                        // console.log('res:', res);
+                        if (res.status === 201) {
+                            window.alert(res.responseJSON.message);
+                            location.reload();
+                        } else if (res.status === 401) {
+                            window.alert(res.responseJSON.message);
+                            // 跳到登录
+                            // window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('服务器正忙');
+                        }
+                    }
+                })
+            })
+        }
+
+        bindFollowQuestion();
+        bindUnFollowQuestion();
+        bindCommentPublishEvent();
+        bindUpAnswer();
+        bindDownAnswer();
+        bindAnswerCollect();
+
+        // 发表评论
+        function bindCommentPublishEvent(html) {
+            // 查询发表评论表单
+            var form = $('.comment-publish', html);
+            // 给发表评论表单下的.btn绑定事件
+            $('.btn', form).click(function () {
+                var _form = $(this).parent();
+                var content = $('input[name=content]', _form);
+                // 将表单内容序列化成一个字符串
+                var data = _form.serialize();
+                $.ajax({
+                    url: {% if answer %}'{{ url_for("qa.comments", answer_id=answer.id) }}'{% else %}''{% endif %},
+                    method: 'POST',
+                    data: data,
+                    complete: function (res) {
+                        console.log(res);
+                        if (res.status === 201) {
+                            window.alert(res.responseJSON.message);
+                            // 清空评论框
+                            content.val('');
+                            // 重新加载页面
+                            location.reload();
+                        } else if (res.status === 400) {
+                            window.alert(res.responseJSON.message);
+                            window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('请求失败,请稍后重试');
+                        }
+                    }
+                })
+            })
+        }
+
+        // 评论回复按钮事件
+        function bindReplyEvent(html) {
+            $('.link-reply', html).click(function () {
+                // jq取得data-id中的值=comment_id
+                var comment_id = $(this).data('id');
+                // 通过comment_id查询得到对应的回复表单
+                var form_reply = $('#id-comment-' + comment_id);
+                // 隐藏所有评论表单
+                $('.comment-publish').addClass('hidden');
+                // 显示最后一个评论表单
+                $('.comment-last').removeClass('hidden');
+                // 显示该评论下表单
+                form_reply.removeClass('hidden');
+            })
+        }
+        function bindCommentEvent(html) {
+            $('.link-love', html).click(function () {
+                var _this = $(this);
+                var url = $(this).data('url');
+                console.log(url);
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    complete: function (res) {
+                        // console.log('res:', res);
+                        if (res.status === 201) {
+                            window.alert('点赞成功');
+                            // 当前的点赞数
+                            var count = $('span', _this).text();
+                            // 点赞数+1
+                            count = parseInt(count) + 1;
+                            // 重新设置，实现点赞数变更
+                            $('span', _this).text(count);
+                        } else if (res.status === 401) {
+                            window.alert('请登录');
+                            // 跳到登录
+                            window.location.href = '{{ url_for("accounts.login") }}';
+                        } else {
+                            window.alert('服务器正忙');
+                        }
+                    }
+                })
+            })
+        }
+
+        // 评论列表的异步加载
+        var comment_ls = $('#id-comment-ls');
+        var page = 1;
+
+        function loadPageData(page) {
+            page = page || 1
+            $.ajax({
+                url: {% if answer %}'{{ url_for("qa.comments", answer_id=answer.id) }}'{% else %}''{% endif %},
+                method: 'GET',
+                data: {
+                    page: page
+                },
+                complete: function (res) {
+                    // console.log('res:', res);
+                    if (res.status === 200) {
+                        var result = res.responseJSON;
+                        if(result) {
+                            if (result.code === 0) {
+                                var html = $(result.data);
+                                // 评论回复按钮事件绑定
+                                bindReplyEvent(html);
+                                // 发布按钮事件绑定
+                                bindCommentPublishEvent(html);
+                                // 点赞按钮事件绑定
+                                bindCommentEvent(html);
+                                comment_ls.empty().append(html);
+                            }
+                        }
+                    } else {
+                        window.alert('服务器正忙')
+                    }
+                }
+            })
+        }
+
+        $('.pager .previous').click(function () {
+            page = page - 1;
+            loadPageData(page);
+        })
+        $('.pager .next').click(function () {
+            page = page + 1;
+            loadPageData(page);
+        });
+        // 默认加载第一页数据
+        loadPageData(page);
+    </script>
+{% endblock %}

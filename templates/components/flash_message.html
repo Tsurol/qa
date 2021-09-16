@@ -1,0 +1,14 @@
+{# flash消息 #}
+<!-- 消息通知区域 -->
+{# with_categories=true:启用消息分类 #}
+{% for category,message in get_flashed_messages(with_categories=true) %}
+<div class="alert alert-{{ category }} alert-dismissible fade in" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+            aria-hidden="true">×</span></button>
+    {# 可能用户已经注册,即提示将跳转到accounts.login #}
+    {% autoescape false %}
+    <span>{{ message }}</span>
+    {% endautoescape %}
+</div>
+{% endfor %}
+<!-- // 消息通知区域 -->

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% from 'macro/form_errors.html' import form_field_errors %}
+{% block title %}{{ super() }}个人中心{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="/assets/style/mine.css">
+{% endblock %}
+
+{% block layout %}
+    <!-- 顶部导航 -->
+    {% include 'components/nav.html' %}
+    <!-- // 顶部导航 -->
+    <!-- 顶部个人信息 -->
+    <div class="layout-personal">
+        <div class="container">
+            <!-- flash消息 -->
+            {% include 'components/flash_message.html' %}
+            <!-- //flash消息 -->
+            <div class="main-top">
+                <img src="/assets/home/qa/personal_top.jpg" alt="">
+            </div>
+            <div class="main-bottom">
+                <div class="content-left">
+                    {% if user.avatar %}
+                        <img src="{{ user.get_avatar_url }}" alt="">
+                    {% else %}
+                        {# todo 用户没有头像->头像图片上传 #}
+                        <img src="/assets/home/qa/personal_avatar.jpg" alt="">
+                    {% endif %}
+                </div>
+                <div class="content-right">
+                    <h3>{{ user.nickname }}</h3>
+                    <div class="desc">
+                        {{ user.profile.maxim|d('他很懒，没有也没有留下', True) }}
+                    </div>
+                    <div class="info-row">
+                        <i class="glyphicon glyphicon-user"></i> <span>{{ user.profile.sex|d('男', True) }}</span>
+                    </div>
+                    <button class="btn btn-default btn-gray" data-toggle="modal" data-target="#mine-editor"
+                            type="button">
+                        编辑个人资料
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- // 顶部个人信息 -->
+    <!-- 中间内容区域 -->
+    <div class="container layout-main">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- 左侧内容区域 -->
+                <div class="main-left">
+                    <ul class="nav nav-tabs">
+                        <li role="presentation"><a href="#">动态</a></li>
+                        <li role="presentation"><a href="#">回答</a></li>
+                        <li role="presentation"><a href="#">收藏</a></li>
+                        <li role="presentation" class="active"><a href="#">关注</a></li>
+                        <li role="presentation"><a href="#">文章</a></li>
+                    </ul>
+                    <div class="title">我关注的问题</div>
+                    <!-- 我关注的问题列表 -->
+                    <ul class="follow-qa-ls">
+                        {% for follow in page_data.items %}
+                            <li>
+                                <a href="{{ url_for('qa.detail', q_id=follow.question.id) }}">{{ follow.question.title }}</a>
+                                <div class="stats">
+                                    {{ follow.question.questioned_at }}
+                                    · {{ follow.question.answer_count|d('0', True) }}个回答
+                                    · {{ follow.question.follow_question_list.count()|d('0', True) }}个关注
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <!-- // 我关注的问题列表 -->
+                    <nav aria-label="Page navigation" class="text-center">
+                        <ul class="pagination">
+                            <li {% if not page_data.has_prev %} class="disabled"{% endif %}>
+                                {% if page_data.prev_num == None %}
+                                    <a href="javascript:" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('accounts.mine') }}?page={{ page_data.prev_num }}"
+                                       aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                {% endif %}
+                            </li>
+                            {% for num in range(1, page_data.pages + 1) %}
+                                <li {% if num == page_data.page %} class="active" {% endif %}>
+                                    <a href="{{ url_for('accounts.mine') }}?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endfor %}
+                            <li {% if not page_data.has_next %} class="disabled" {% endif %}>
+                                {% if page_data.next_num == None %}
+                                    <a href="javascript:" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('accounts.mine') }}?page={{ page_data.next_num }}"
+                                       aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <!-- //左侧内容区域 -->
+            </div>
+            <div class="col-md-3">
+                <!-- 右侧内容区域 -->
+                <div class="main-right">
+                    <!-- 关注统计 -->
+                    <div class="follow-stats box-wrap">
+                        <div>
+                            <span>关注了</span>
+                            <strong>{{ user.profile.follow|num_split|d('0', True) }}</strong>
+                        </div>
+                        <div>
+                            <span>关注者</span>
+                            <strong>{{ user.profile.fans|num_split|d('0', True) }}</strong>
+                        </div>
+                    </div>
+                    <!-- // 关注统计 -->
+                    <!-- 右侧页脚 -->
+                    <div class="right-footer">
+                        <a href="#">用户指南</a><span class="dot">·</span>
+                        <a href="#">用户使用协议</a><span class="dot">·</span>
+                        <a href="#">用户隐私权政策</a>
+                        <br/>
+                        <a href="#">侵权举报</a><span class="dot">·</span>
+                        <a href="#">网上有害信息举报专区</a>
+                        <br/>
+                        <a href="#">京ICP证 第10001000号</a>
+                        <br/>
+                        <a href="#">京ICP备 第10001000号</a>
+                        <br/>
+                        <a href="#">联系我们 &copy; 2020在线问答</a>
+                    </div>
+                    <!-- //右侧页脚 -->
+                </div>
+                <!-- //右侧内容区域 -->
+            </div>
+        </div>
+    </div>
+    <!-- //中间内容区域 -->
+    <!-- 编辑个人资料(模态框) -->
+    <div class="modal fade" id="mine-editor" tabindex="-1" role="dialog">
+        <form class="form-horizontal modal-dialog" role="document"
+              method="POST" action="{{ url_for('accounts.mine') }}">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">编辑个人资料</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        {{ form.csrf_token }}
+                        <div class="form-group">
+                            <div>
+                                <label for="nickname" class="col-sm-2">昵称:</label>{{ form.nickname }}
+                                {{ form_field_errors(form.nickname.errors) }}
+                            </div>
+                            <div>
+                                <label for="sex" class="col-sm-2">性别:</label>{{ form.sex }}
+                                {{ form_field_errors(form.sex.errors) }}
+                            </div>
+                            <div>
+                                <label for="real_name" class="col-sm-2">真实姓名:</label>{{ form.real_name }}
+                                {{ form_field_errors(form.real_name.errors) }}
+                            </div>
+                            <div>
+                                <label for="maxim" class="col-sm-2">个性签名:</label>{{ form.maxim }}
+                                {{ form_field_errors(form.maxim.errors) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                        <button type="submit" class="btn btn-primary">提交</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </form>
+    </div><!-- /.modal -->
+    <!-- //编辑个人资料(模态框) -->
+{% endblock %}

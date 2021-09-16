@@ -1,0 +1,10 @@
+{# 表单验证中的错误提示 #}
+{% macro form_field_errors(error_list) %}
+    {% if error_list %}
+        {% for error in error_list %}
+            <ul class="list-unstyled text-danger">
+                <li>{{ error }}</li>
+            </ul>
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
