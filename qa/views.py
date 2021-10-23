@@ -116,7 +116,7 @@ def write():
 
 @qa.route('/comments/<int:answer_id>', methods=['GET', 'POST'])
 def comments(answer_id):
-    """坪论"""
+    """评论"""
     answer = Answer.query.get(answer_id)
     question = answer.question
     if request.method == 'POST':
